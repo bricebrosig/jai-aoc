@@ -1,3 +1,6 @@
 *.exe
 *.pdb
 .build
+aoc
+aoc.dSYM
+.vscode

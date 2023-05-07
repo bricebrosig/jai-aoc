@@ -1,10 +1,11 @@
 /*
-
-6758
-5199
--
-
 */
+
+# if OS == .MACOS {
+    end_of_line :: "\n";
+} else {
+    end_of_line :: "\r\n";
+}
 
 main :: () {
     // day1();
@@ -14,12 +15,9 @@ main :: () {
 
 
 day3 :: () {
-    priority :: (c: u8) -> int {
-        if c >= 97 {  // lower case
-            return c - 96;
-        } else {  // upper case
-            return c - 38;
-        }
+    char_to_priority :: (c: u8) -> int {
+        if c >= 97  return c - 96;
+        else        return c - 38;
     }
 
     data, success := read_entire_file("03-data.txt");
@@ -27,7 +25,7 @@ day3 :: () {
     assert(success, "failed to read file");
     char_counts : [123] u8;
 
-    splits := split(data, "\r\n");
+    splits := split(data, end_of_line);
     sum := 0;
     for line: splits {
         half := line.count / 2;
@@ -37,8 +35,7 @@ day3 :: () {
 
         for half..line.count-1 {
             if char_counts[line[it]] == 1 {
-                print("found dup: % at %. value: %\n", line[it], it, priority(line[it]));
-                sum += priority(line[it]);
+                sum += char_to_priority(line[it]);
                 break;
             }
         }
@@ -50,6 +47,35 @@ day3 :: () {
     }
 
     print("sum of dups: %\n", sum);
+
+    // part two
+    for 0..122 {
+        char_counts[it] = 0;
+    }
+    group_idx := 1;
+    sum = 0;
+    set :u64 = 0xffff_ffff_ffff_ffff;
+    for line: splits {
+        line_bits :u64 = 0;
+        for 0..line.count-1 {
+            line_bits |= (cast(u64) 1) << char_to_priority(line[it]);
+        }
+        set = set & line_bits;
+
+        // we have finished looking at a group
+        if group_idx % 3 == 0 {
+            p_value := 0;
+            while set > 0 {
+                set = set >> 1;
+                p_value += 1;
+            }
+            sum += p_value - 1;
+            set = 0xffff_ffff_ffff_ffff;
+        }
+        group_idx+= 1;
+    }
+
+    print("badge sum: %\n", sum);
 }
 
 
@@ -58,7 +84,7 @@ day2 :: () {
     defer free(data);
     assert(success, "failed to read file");
 
-    splits := split(data, "\r\n");
+    splits := split(data, end_of_line);
     cheating_score := 0;
     sneaky_score   := 0;
     for combo: splits {
@@ -97,7 +123,7 @@ day1 :: () {
     data, success := read_entire_file("01-data.txt");
     defer free(data);
     assert(success, "failed to read file");
-    splits := split(data, "\r\n");
+    splits := split(data, end_of_line);
 
     all_calories : [..] int;
     calories := 0;

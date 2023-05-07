@@ -49,9 +49,6 @@ day3 :: () {
     print("sum of dups: %\n", sum);
 
     // part two
-    for 0..122 {
-        char_counts[it] = 0;
-    }
     group_idx := 1;
     sum = 0;
     set :u64 = 0xffff_ffff_ffff_ffff;
@@ -60,19 +57,17 @@ day3 :: () {
         for 0..line.count-1 {
             line_bits |= (cast(u64) 1) << char_to_priority(line[it]);
         }
-        set = set & line_bits;
+        set &= line_bits;
 
         // we have finished looking at a group
         if group_idx % 3 == 0 {
-            p_value := 0;
-            while set > 0 {
-                set = set >> 1;
-                p_value += 1;
+            while set > 1 {
+                set >>= 1;
+                sum += 1;  // add to sum whichever bit is set
             }
-            sum += p_value - 1;
             set = 0xffff_ffff_ffff_ffff;
         }
-        group_idx+= 1;
+        group_idx += 1;
     }
 
     print("badge sum: %\n", sum);

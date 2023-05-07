@@ -10,9 +10,14 @@
 main :: () {
     // day1();
     // day2();
-    day3();
+    // day3();
+    day4();
 }
 
+
+day4 :: () {
+    
+}
 
 day3 :: () {
     char_to_priority :: (c: u8) -> int {

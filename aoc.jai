@@ -16,7 +16,31 @@ main :: () {
 
 
 day4 :: () {
+    data, success := read_entire_file("04-data.txt");
+    defer free(data);
+    assert(success, "failed to read file");
     
+    splits := split(data, end_of_line);
+    full_overlap_count := 0;
+    overlap_count := 0;
+    for line: splits {
+        halves := split(line, ",");
+        left_lower  := to_integer(split(halves[0], "-")[0]);
+        left_upper  := to_integer(split(halves[0], "-")[1]);
+        right_lower := to_integer(split(halves[1], "-")[0]);
+        right_upper := to_integer(split(halves[1], "-")[1]);
+
+        if (left_lower <= right_lower && left_upper >= right_upper) ||  (right_lower <= left_lower && right_upper >= left_upper){
+            full_overlap_count += 1;
+        }
+
+        if (left_upper >= right_lower && left_lower <= right_lower) || (left_lower <= right_upper && right_lower <= left_lower) {
+            overlap_count += 1;
+        }
+    }
+
+    print("num full overlap: %\n", full_overlap_count);
+    print("num overlap: %\n", overlap_count);
 }
 
 day3 :: () {

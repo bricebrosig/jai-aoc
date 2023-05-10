@@ -3,15 +3,95 @@
 
 # if OS == .MACOS {
     end_of_line :: "\n";
+    double_end_of_line :: "\n\n";
 } else {
     end_of_line :: "\r\n";
+    double_end_of_line :: "\r\n\r\n";
 }
 
 main :: () {
     // day1();
     // day2();
     // day3();
-    day4();
+    // day4();
+    day5();
+}
+
+
+day5 :: () {
+    data, success := read_entire_file("05-data.txt");
+    defer free(data);
+    assert(success, "failed to read file");
+
+    split_data := split(data, double_end_of_line);
+    initial_state := split_data[0];
+    moves := split_data[1];
+
+    // initialize the stacks
+    num_stacks := initial_state[initial_state.count-2] - 48;  // reading an ascii u8 and subtracting its offset to get its value
+    stacks := NewArray(num_stacks, [..] int);
+    defer array_free(stacks);
+    initial_state.count -= 1;  // don't read the last line of the initial state section as stack data
+    lines := split(initial_state, end_of_line);
+    lines.count = lines.count - 1;
+
+    for < line: lines {  // this 'for <' means iterate backwards
+        i := 1;  // the letters in the stack are lined up starting at index 1 and appear every 4 (if they exist)
+        while i < line.count {
+            if line[i] != 32 {  // not a space
+                array_add(*stacks[(i - 1) / 4], line[i]);
+            }
+            i += 4;
+        }
+    }
+
+    print("inital state:\n");
+    for stack: stacks {
+        for item: stack {
+            print("% ", item);
+        }
+        print("\n");
+    }
+    print("\n");
+
+    // handle the moves
+    for move: split(moves, end_of_line) {
+        splits := split(move, " ");
+        how_many := to_integer(splits[1]);
+        from := to_integer(splits[3]) - 1;  // -1 since these are array indices
+        to := to_integer(splits[5]) - 1;  // -1 sinces these are array indices
+
+        // part 1 : moving one at a time
+        // for 1..how_many {
+        //     if stacks[from].count > 0 {
+        //         array_add(*stacks[to], stacks[from][stacks[from].count - 1]);
+        //         array_unordered_remove_by_index(*stacks[from], stacks[from].count - 1);
+        //     }
+        // }
+
+        // part 2 : moving many at a time
+        if stacks[from].count >= how_many {
+            for i: stacks[from].count - how_many..stacks[from].count - 1 {
+                array_add(*stacks[to], stacks[from][i]);
+            }
+            for i: 0..how_many-1 {
+                array_unordered_remove_by_index(*stacks[from], i + (stacks[from].count - how_many));
+            }
+        } else {
+            for item: stacks[from] {
+                array_add(*stacks[to], item);
+            }
+            array_reset(*stacks[from]);  // empty the array but don't free the memory
+        }
+    }
+
+    print("final state:\n");
+    for stack: stacks {
+        for item: stack {
+            print("% ", to_string(* (cast(u8) item), 1));
+        }
+        print("\n");
+    }
 }
 
 

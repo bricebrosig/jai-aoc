@@ -14,7 +14,73 @@ main :: () {
     // day2();
     // day3();
     // day4();
-    day5();
+    // day5();
+    // day6();
+    day7();
+}
+
+day7 :: () {
+    Node :: struct {
+        size:   u32;
+        name:   string;
+        is_dir: bool;
+        parent: *Node;
+        children: [..] Node;
+    }
+
+    dir_table: Table(u64, *Node);
+
+    root: Node;
+    root.size = 0;
+    root.name = "\\";
+    root.is_dir = true;
+    root.parent = null;
+
+    data, success := read_entire_file("07-data.txt");
+    defer free(data);
+    assert(success, "failed to read file");
+
+    curr_node : *Node = *root;
+
+    lines := split(data, end_of_line);
+
+    for line: lines {
+        if slice(line, 0, 4) == "$ cd" {;
+            if split(line, " ")[1] == "cd" {
+                // if we didn't know that this directory existed, we should add it
+
+                // change curr node
+            }
+        } else {
+            // we are looking at output
+        }
+    }
+}
+
+day6 :: () {
+    data, success := read_entire_file("06-data.txt");
+    defer free(data);
+    assert(success, "failed to read file");
+
+    // key_size ::  4;  // part 1
+    key_size :: 14;  // part 2
+
+    table: Table(u8, u8);
+    init(*table, key_size);
+    defer deinit(*table);
+
+    for base: 0..data.count - key_size - 1 {
+        for i: base..base+key_size-1 {
+            table_set(*table, data[i], 1);
+        }
+
+        if table.count == key_size {
+            print("message starts at %\n", base + key_size);
+            break;
+        }
+
+        table_reset(*table);
+    }
 }
 
 
@@ -252,3 +318,4 @@ day1 :: () {
 #import "Basic";
 #import "String";
 #import "Sort";
+#import "Hash_Table";

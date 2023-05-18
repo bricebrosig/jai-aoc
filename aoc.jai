@@ -1,13 +1,16 @@
 /*
 */
 
-# if OS == .MACOS {
+# if OS == .MACOS || OS == .LINUX{
     end_of_line :: "\n";
     double_end_of_line :: "\n\n";
 } else {
     end_of_line :: "\r\n";
     double_end_of_line :: "\r\n\r\n";
 }
+
+// end_of_line        :: "\n";
+// double_end_of_line :: "\n\n";
 
 main :: () {
     // day1();
@@ -20,19 +23,17 @@ main :: () {
 }
 
 day7 :: () {
-    Node :: struct {
-        size:   u32;
-        name:   string;
-        is_dir: bool;
-        parent: *Node;
+    Node :: struct (_name: string, _size: u32, _is_dir: bool, _parent: *Node) {
+        size:   u32    = _size;
+        name:   string = _name;
+        is_dir: bool   = _is_dir;
+        parent: *Node  = _parent;
         children: [..] Node;
     }
-
-    dir_table: Table(u64, *Node);
-
+    
     root: Node;
-    root.size = 0;
-    root.name = "\\";
+    root.size   = 0;
+    root.name   = "\\";
     root.is_dir = true;
     root.parent = null;
 
@@ -43,16 +44,34 @@ day7 :: () {
     curr_node : *Node = *root;
 
     lines := split(data, end_of_line);
-
-    for line: lines {
-        if slice(line, 0, 4) == "$ cd" {;
-            if split(line, " ")[1] == "cd" {
-                // if we didn't know that this directory existed, we should add it
-
-                // change curr node
+    
+    // skip the first line
+    for i: 1..lines.count-1 {
+        line = lines[i];
+        print("%\n", line);
+        key := slice(line, 0, 4);
+        if key == "$ cd" {
+            name := split(line, " ")[1];
+            for child: curr_node.children {
+                if child.name == name {
+                    curr_node = child;
+                    break;
+                }
             }
+        } else if key == "dir " {
+            name := split(line, " ")[1];
+            array_add(curr_node.children, Node(name, 0, true, *curr_node));
+        } else if key == "$ ls"{
+            // do nothing
         } else {
-            // we are looking at output
+            size := to_integer(split(line, " ")[0]);
+            name := split(line, " ")[1];
+            array_add(curr_node.children, Node(name, size, false, *curr_node));
+            curr_node.size += size;
+            tmp_node : *Node = curr_node.parent;
+            while tmp_node != null {
+                tmp_node.size += size;
+            }
         }
     }
 }

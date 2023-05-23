@@ -23,56 +23,94 @@ main :: () {
 }
 
 day7 :: () {
-    Node :: struct (_name: string, _size: u32, _is_dir: bool, _parent: *Node) {
-        size:   u32    = _size;
-        name:   string = _name;
-        is_dir: bool   = _is_dir;
-        parent: *Node  = _parent;
-        children: [..] Node;
+    Node :: struct {
+        name:   string;
+        is_dir: bool;
+        size:   int;
+        index:  int;
+        parent: int;
+        depth:  int;
+        children: [..] int;
+    }
+
+    init_node :: (node: *Node, name: string, size: int, is_dir: bool, parent: int, idx: int, depth: int) {
+        node.size   = size;
+        node.name   = name;
+        node.is_dir = is_dir;
+        node.parent = parent;
+        node.index  = idx;
+        node.depth  = depth;
     }
     
+    all_nodes: [..] Node;
     root: Node;
-    root.size   = 0;
-    root.name   = "\\";
-    root.is_dir = true;
-    root.parent = null;
+    init_node(*root, "\\", 0, true, 0, 0, 0);
+    array_add(*all_nodes, root);
 
     data, success := read_entire_file("07-data.txt");
     defer free(data);
     assert(success, "failed to read file");
 
-    curr_node : *Node = *root;
-
+    curr_node: int = 0;
     lines := split(data, end_of_line);
     
     // skip the first line
     for i: 1..lines.count-1 {
-        line = lines[i];
+        line := lines[i];
         print("%\n", line);
         key := slice(line, 0, 4);
         if key == "$ cd" {
-            name := split(line, " ")[1];
-            for child: curr_node.children {
-                if child.name == name {
-                    curr_node = child;
-                    break;
+            name := split(line, " ")[2];
+
+            if name == ".." {
+                curr_node = all_nodes[curr_node].parent;
+                print("\tcd into %: %\n", curr_node, all_nodes[curr_node].name);
+            } else {
+                for child_index, i: all_nodes[curr_node].children {
+                    child := all_nodes[child_index]
+                    if child.name == name {
+                        curr_node = child.index;
+                        print("\tcd into %: %\n", curr_node, all_nodes[curr_node].name);
+                        break;
+                    }
                 }
             }
+
         } else if key == "dir " {
             name := split(line, " ")[1];
-            array_add(curr_node.children, Node(name, 0, true, *curr_node));
+            new_node: Node;
+            init_node(*new_node, name, 0, true, curr_node, all_nodes.count, all_nodes[curr_node].depth + 1);
+            array_add(*all_nodes[curr_node].children, new_node.index);
+            array_add(*all_nodes, new_node);
+            print("\tadded % at index %\n", name, new_node.index);
         } else if key == "$ ls"{
             // do nothing
         } else {
             size := to_integer(split(line, " ")[0]);
             name := split(line, " ")[1];
-            array_add(curr_node.children, Node(name, size, false, *curr_node));
-            curr_node.size += size;
-            tmp_node : *Node = curr_node.parent;
-            while tmp_node != null {
-                tmp_node.size += size;
+            new_node: Node;
+            init_node(*new_node, name, size, false, curr_node, all_nodes.count, all_nodes[curr_node].depth + 1);
+            array_add(*all_nodes[curr_node].children, new_node.index);
+            array_add(*all_nodes, new_node);
+            all_nodes[curr_node].size += size;
+            tmp_node: int = all_nodes[curr_node].parent;
+            while tmp_node != 0 {
+                all_nodes[tmp_node].size += size;
+                tmp_node = all_nodes[tmp_node].parent;
+
             }
         }
+    }
+
+    print("********************************\n");
+
+    curr_node = 0;
+    for child_idx: curr_node.children {
+        
+    }
+    for node: all_nodes {
+        for 1..node.depth  print("  ");
+        print("- % (%, %)\n", node.name, ifx node.is_dir then "dir" else "file", node.size);
     }
 }
 

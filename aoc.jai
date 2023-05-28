@@ -26,14 +26,14 @@ day7 :: () {
     Node :: struct {
         name:   string;
         is_dir: bool;
-        size:   int;
         index:  int;
+        size:   int;
         parent: int;
         depth:  int;
         children: [..] int;
     }
 
-    init_node :: (node: *Node, name: string, size: int, is_dir: bool, parent: int, idx: int, depth: int) {
+    init_node :: (node: *Node, name: string, size: int, is_dir: bool, idx: int, parent: int, depth: int) {
         node.size   = size;
         node.name   = name;
         node.is_dir = is_dir;
@@ -41,81 +41,75 @@ day7 :: () {
         node.index  = idx;
         node.depth  = depth;
     }
-    
-    all_nodes: [..] Node;
-    root: Node;
-    init_node(*root, "\\", 0, true, 0, 0, 0);
-    array_add(*all_nodes, root);
 
-    data, success := read_entire_file("07-data.txt");
-    defer free(data);
+    data, success := read_entire_file("data/07-data.txt");
     assert(success, "failed to read file");
+    defer free(data);
 
-    curr_node: int = 0;
-    lines := split(data, end_of_line);
+    root: Node;
+    all: [..] Node;
+    init_node(*root, "/", 0, true, 0, 0, 0);
+    array_add(*all, root);
+    curr_idx := 0;
+    defer array_free(all);
     
-    // skip the first line
+    lines := split(data, end_of_line);
     for i: 1..lines.count-1 {
         line := lines[i];
         print("%\n", line);
         key := slice(line, 0, 4);
-        if key == "$ cd" {
-            name := split(line, " ")[2];
-
-            if name == ".." {
-                curr_node = all_nodes[curr_node].parent;
-                print("\tcd into %: %\n", curr_node, all_nodes[curr_node].name);
-            } else {
-                for child_index, i: all_nodes[curr_node].children {
-                    child := all_nodes[child_index]
-                    if child.name == name {
-                        curr_node = child.index;
-                        print("\tcd into %: %\n", curr_node, all_nodes[curr_node].name);
-                        break;
+        if key == {
+            case "$ cd";  // move into a child directory
+                name := split(line, " ")[2];
+                if name == ".." {
+                    curr_idx = all[curr_idx].parent;
+                } else {
+                    for node, i: all {
+                        if node.name == name {
+                            curr_idx = i;
+                            break;
+                        }
                     }
                 }
-            }
+            case "dir ";  // add directory to our nodes
+                name := split(line, " ")[1];
+                curr_node := *all[curr_idx];
+                new_node: Node;
+                init_node(*new_node, name, 0, true, all.count, curr_idx, curr_node.depth + 1);
+                array_add(*curr_node.children, new_node.index);
+                array_add(*all, new_node);
+            case "$ ls";  // do nothing
 
-        } else if key == "dir " {
-            name := split(line, " ")[1];
-            new_node: Node;
-            init_node(*new_node, name, 0, true, curr_node, all_nodes.count, all_nodes[curr_node].depth + 1);
-            array_add(*all_nodes[curr_node].children, new_node.index);
-            array_add(*all_nodes, new_node);
-            print("\tadded % at index %\n", name, new_node.index);
-        } else if key == "$ ls"{
-            // do nothing
-        } else {
-            size := to_integer(split(line, " ")[0]);
-            name := split(line, " ")[1];
-            new_node: Node;
-            init_node(*new_node, name, size, false, curr_node, all_nodes.count, all_nodes[curr_node].depth + 1);
-            array_add(*all_nodes[curr_node].children, new_node.index);
-            array_add(*all_nodes, new_node);
-            all_nodes[curr_node].size += size;
-            tmp_node: int = all_nodes[curr_node].parent;
-            while tmp_node != 0 {
-                all_nodes[tmp_node].size += size;
-                tmp_node = all_nodes[tmp_node].parent;
-
-            }
+            case;         // regular file
+                name := split(line, " ")[1];
+                size := to_integer(split(line, " ")[0]);
+                curr_node := *all[curr_idx];
+                new_node: Node;
+                init_node(*new_node, name, size, false, all.count, curr_idx, curr_node.depth + 1);
+                array_add(*curr_node.children, new_node.index);
+                array_add(*all, new_node);
         }
     }
 
-    print("********************************\n");
+    print("\n********************************\n");
 
-    curr_node = 0;
-    for child_idx: curr_node.children {
-        
-    }
-    for node: all_nodes {
+    curr_idx = 0;
+    stack : [..] int;  defer array_free(stack);
+    array_add(*stack, 0);
+    while stack.count > 0 {
+        node := all[stack[stack.count - 1]];
         for 1..node.depth  print("  ");
-        print("- % (%, %)\n", node.name, ifx node.is_dir then "dir" else "file", node.size);
+        if node.is_dir  print("- % (dir)\n", node.name, node.size);
+        else            print("- %, (file, size=%)\n", node.name, node.size);
+ 
+        stack.count -= 1;
+        for node.children  array_add(*stack, it);
     }
 }
 
+
 day6 :: () {
-    data, success := read_entire_file("06-data.txt");
+    data, success := read_entire_file("data/06-data.txt");
     defer free(data);
     assert(success, "failed to read file");
 
@@ -142,7 +136,7 @@ day6 :: () {
 
 
 day5 :: () {
-    data, success := read_entire_file("05-data.txt");
+    data, success := read_entire_file("data/05-data.txt");
     defer free(data);
     assert(success, "failed to read file");
 
@@ -219,7 +213,7 @@ day5 :: () {
 
 
 day4 :: () {
-    data, success := read_entire_file("04-data.txt");
+    data, success := read_entire_file("data/04-data.txt");
     defer free(data);
     assert(success, "failed to read file");
     
@@ -252,7 +246,7 @@ day3 :: () {
         else        return c - 38;
     }
 
-    data, success := read_entire_file("03-data.txt");
+    data, success := read_entire_file("data/03-data.txt");
     defer free(data);
     assert(success, "failed to read file");
     char_counts : [123] u8;
@@ -307,7 +301,7 @@ day3 :: () {
 
 
 day2 :: () {
-    data, success := read_entire_file("02-data.txt");
+    data, success := read_entire_file("data/02-data.txt");
     defer free(data);
     assert(success, "failed to read file");
 
@@ -347,7 +341,7 @@ day2 :: () {
 //
 // i would like to find 
 day1 :: () {
-    data, success := read_entire_file("01-data.txt");
+    data, success := read_entire_file("data/01-data.txt");
     defer free(data);
     assert(success, "failed to read file");
     splits := split(data, end_of_line);

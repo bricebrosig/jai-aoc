@@ -26,6 +26,7 @@ day7 :: () {
     Node :: struct {
         name:   string;
         is_dir: bool;
+        children_visited: int;
         index:  int;
         size:   int;
         parent: int;
@@ -75,7 +76,8 @@ day7 :: () {
                 name := split(line, " ")[1];
                 curr_node := *all[curr_idx];
                 new_node: Node;
-                init_node(*new_node, name, 0, true, all.count, curr_idx, curr_node.depth + 1);
+                path := sprint("%/%", curr_node.name, name);
+                init_node(*new_node, path, 0, true, all.count, curr_idx, curr_node.depth + 1);
                 array_add(*curr_node.children, new_node.index);
                 array_add(*all, new_node);
             case "$ ls";  // do nothing
@@ -85,7 +87,8 @@ day7 :: () {
                 size := to_integer(split(line, " ")[0]);
                 curr_node := *all[curr_idx];
                 new_node: Node;
-                init_node(*new_node, name, size, false, all.count, curr_idx, curr_node.depth + 1);
+                path := sprint("%/%", curr_node.name, name);
+                init_node(*new_node, path, size, false, all.count, curr_idx, curr_node.depth + 1);
                 array_add(*curr_node.children, new_node.index);
                 array_add(*all, new_node);
         }
@@ -97,14 +100,28 @@ day7 :: () {
     stack : [..] int;  defer array_free(stack);
     array_add(*stack, 0);
     while stack.count > 0 {
-        node := all[stack[stack.count - 1]];
-        for 1..node.depth  print("  ");
-        if node.is_dir  print("- % (dir)\n", node.name, node.size);
-        else            print("- %, (file, size=%)\n", node.name, node.size);
- 
-        stack.count -= 1;
-        for node.children  array_add(*stack, it);
+        node := *all[stack[stack.count - 1]];
+        
+        if !node.is_dir || node.children_visited == node.children.count {
+            for 1..node.depth  print("  ");
+            if node.is_dir     print("- % (dir, size=%)\n", node.name, node.size);
+            else               print("- %, (file, size=%)\n", node.name, node.size);
+            all[node.parent].children_visited += 1;
+            all[node.parent].size += node.size;
+            stack.count -= 1;  // "pop"
+        } else {
+            for node.children  array_add(*stack, it);
+        }
     }
+
+    sum := 0;
+    for all {
+        if it.is_dir && it.size <= 100000  {
+            print("%, size=%\n", it.name, it.size);
+            sum += it.size;
+        }
+    }
+    print("sum = %\n", sum);
 }
 
 

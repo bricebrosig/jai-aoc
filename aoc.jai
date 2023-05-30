@@ -19,7 +19,11 @@ main :: () {
     // day4();
     // day5();
     // day6();
-    day7();
+    // day7();
+    day8();
+}
+
+day8 :: () {
 }
 
 day7 :: () {
@@ -53,6 +57,9 @@ day7 :: () {
     array_add(*all, root);
     curr_idx := 0;
     defer array_free(all);
+
+    TOTAL_SPACE :: 70_000_000;
+    NEED_SPACE  :: 30_000_000;
     
     lines := split(data, end_of_line);
     for i: 1..lines.count-1 {
@@ -62,11 +69,13 @@ day7 :: () {
         if key == {
             case "$ cd";  // move into a child directory
                 name := split(line, " ")[2];
+                curr_name := all[curr_idx].name;
+                path := sprint("%/%", curr_name, name);
                 if name == ".." {
                     curr_idx = all[curr_idx].parent;
                 } else {
                     for node, i: all {
-                        if node.name == name {
+                        if node.name == path {
                             curr_idx = i;
                             break;
                         }
@@ -104,7 +113,7 @@ day7 :: () {
         
         if !node.is_dir || node.children_visited == node.children.count {
             for 1..node.depth  print("  ");
-            if node.is_dir     print("- % (dir, size=%)\n", node.name, node.size);
+            if node.is_dir     print("- %, (dir, size=%)\n",  node.name, node.size);
             else               print("- %, (file, size=%)\n", node.name, node.size);
             all[node.parent].children_visited += 1;
             all[node.parent].size += node.size;
@@ -114,6 +123,10 @@ day7 :: () {
         }
     }
 
+    all[0].size /= 2;  // we added it to itself at the very end
+
+    print("\n********************************\n");
+
     sum := 0;
     for all {
         if it.is_dir && it.size <= 100000  {
@@ -122,6 +135,28 @@ day7 :: () {
         }
     }
     print("sum = %\n", sum);
+
+    print("\n********************************\n");
+
+    print("total space : %\n", TOTAL_SPACE);
+    print("total needed: %\n", NEED_SPACE);
+    print("total used  : %\n", all[0].size);
+    print("available   : %\n", TOTAL_SPACE - all[0].size);
+    print("need        : %\n", NEED_SPACE - (TOTAL_SPACE - all[0].size));
+
+    need := NEED_SPACE - (TOTAL_SPACE - all[0].size);
+    smallest := 100_000_000;  // @hack
+    smallest_i := -1;
+    for it, i: all {
+        if it.is_dir && it.size > need {
+            if it.size < smallest {
+                smallest = it.size;
+                smallest_i = i;
+            }
+        }
+    }
+
+    print("delete dir % of size %\n", all[smallest_i].name, all[smallest_i].size);
 }
 
 
